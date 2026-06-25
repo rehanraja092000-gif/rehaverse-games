@@ -2,24 +2,284 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Elemental Chain - RehaVerse Games</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{background:#0a0a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Segoe UI',sans-serif;color:#fff;text-align:center;padding:20px}
-  h1{font-size:2rem;margin-bottom:8px;background:linear-gradient(135deg,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-  p{color:#94a3b8;margin-bottom:24px;max-width:400px}
-  .elements{display:flex;gap:12px;margin-bottom:24px;font-size:2rem}
-  .badge{background:linear-gradient(135deg,#7c3aed,#ec4899);padding:8px 20px;border-radius:50px;font-size:0.85rem;font-weight:700}
-  a{display:inline-block;margin-top:16px;padding:12px 24px;background:#7c3aed;color:#fff;border-radius:10px;text-decoration:none;font-weight:700}
+  body{background:#0a0a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Segoe UI',sans-serif;color:#fff;padding:12px;overflow-x:hidden}
+  .title{font-size:1.6rem;font-weight:800;margin-bottom:4px;background:linear-gradient(135deg,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .subtitle{font-size:0.75rem;color:#64748b;margin-bottom:10px;letter-spacing:1px}
+  .hud{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;justify-content:center}
+  .hud-item{background:#1a1a3e;padding:8px 16px;border-radius:10px;text-align:center;min-width:70px;border:1px solid #24245a}
+  .hud-item .val{font-size:1.3rem;font-weight:800;color:#a855f7}
+  .hud-item .lbl{font-size:0.6rem;color:#64748b;text-transform:uppercase;letter-spacing:1px}
+  .next-piece{display:flex;align-items:center;gap:8px;margin-bottom:12px;background:#12122a;padding:8px 16px;border-radius:10px;border:1px solid #24245a}
+  .next-label{font-size:0.75rem;color:#64748b;text-transform:uppercase}
+  .next-tile{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.4rem}
+  #board{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:6px;background:#12122a;border-radius:14px;border:2px solid #24245a;width:100%;max-width:380px}
+  @media(min-width:500px){#board{max-width:440px;gap:6px;padding:8px}}
+  .cell{aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.8rem;cursor:pointer;transition:all 0.2s;position:relative;border:2px solid transparent;background:#1a1a3e}
+  @media(min-width:500px){.cell{font-size:2.2rem;border-radius:12px}}
+  .cell:hover:not(.filled){border-color:#7c3aed;background:#24245a;transform:scale(1.05)}
+  .cell.filled{cursor:default}
+  .cell.chain{animation:chainPulse 0.5s ease-out}
+  .cell.clearing{animation:clearAnim 0.4s ease-out forwards}
+  @keyframes chainPulse{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+  @keyframes clearAnim{0%{transform:scale(1);opacity:1}100%{transform:scale(0) rotate(180deg);opacity:0}}
+  .fire{background:linear-gradient(135deg,#ef4444,#dc2626);border-color:#f87171;box-shadow:0 0 12px rgba(239,68,68,0.3)}
+  .water{background:linear-gradient(135deg,#3b82f6,#2563eb);border-color:#60a5fa;box-shadow:0 0 12px rgba(59,130,246,0.3)}
+  .earth{background:linear-gradient(135deg,#10b981,#059669);border-color:#34d399;box-shadow:0 0 12px rgba(16,185,129,0.3)}
+  .air{background:linear-gradient(135deg,#94a3b8,#64748b);border-color:#cbd5e1;box-shadow:0 0 12px rgba(148,163,184,0.3)}
+  .lightning{background:linear-gradient(135deg,#f59e0b,#d97706);border-color:#fbbf24;box-shadow:0 0 12px rgba(245,158,11,0.3)}
+  .combo-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2rem;font-weight:800;color:#f59e0b;pointer-events:none;animation:popUp 1s ease-out forwards;z-index:100;text-shadow:0 0 20px rgba(245,158,11,0.5)}
+  @keyframes popUp{0%{opacity:1;transform:translate(-50%,-50%) scale(0.5)}50%{transform:translate(-50%,-50%) scale(1.3)}100%{opacity:0;transform:translate(-50%,-80%) scale(1)}}
+  .btn{padding:12px 28px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:10px;font-size:0.95rem;font-weight:700;cursor:pointer;margin-top:12px}
+  .btn:active{transform:scale(0.97)}
+  #overlay{position:fixed;inset:0;background:rgba(10,10,26,0.93);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:50}
+  #overlay h2{font-size:2.2rem;margin-bottom:8px;background:linear-gradient(135deg,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  #overlay .score-result{font-size:1.5rem;color:#f59e0b;font-weight:700;margin-bottom:6px}
+  #overlay p{color:#94a3b8;margin-bottom:20px}
+  .elements-row{font-size:1.8rem;margin-bottom:8px;letter-spacing:8px}
+  .how-to{max-width:340px;text-align:center;margin-bottom:16px;font-size:0.8rem;color:#94a3b8;line-height:1.5}
 </style>
 </head>
 <body>
-  <div class="elements">🔥 💧 🌿 💨 ⚡</div>
-  <h1>Elemental Chain</h1>
-  <div class="badge">By RehaVerse Studios</div>
-  <p>Place elemental tiles on a 6×6 grid to trigger powerful chain reactions! Combine Fire, Water, Earth, Air, and Lightning in strategic patterns to score big.</p>
-  <p style="color:#f59e0b;font-weight:600;">⚠️ Replace this placeholder with your actual Elemental Chain web version HTML file.</p>
-  <a href="https://play.google.com/store/apps/details?id=com.rehaverse.elementalchain" target="_blank">📱 Play on Android</a>
+<div class="elements-row">🔥 💧 🌿 💨 ⚡</div>
+<div class="title">Elemental Chain</div>
+<div class="subtitle">By RehaVerse Studios</div>
+
+<div class="hud">
+  <div class="hud-item"><div class="val" id="score">0</div><div class="lbl">Score</div></div>
+  <div class="hud-item"><div class="val" id="chains">0</div><div class="lbl">Chains</div></div>
+  <div class="hud-item"><div class="val" id="best">0</div><div class="lbl">Best</div></div>
+  <div class="hud-item"><div class="val" id="moves">36</div><div class="lbl">Moves</div></div>
+</div>
+
+<div class="next-piece">
+  <span class="next-label">Next:</span>
+  <div class="next-tile" id="nextTile"></div>
+  <div class="next-tile" id="nextTile2"></div>
+  <div class="next-tile" id="nextTile3"></div>
+</div>
+
+<div id="board"></div>
+<button class="btn" onclick="newGame()">🔄 New Game</button>
+
+<div id="overlay">
+  <div class="elements-row">🔥 💧 🌿 💨 ⚡</div>
+  <h2 id="ovTitle">Elemental Chain</h2>
+  <div class="score-result" id="ovScore"></div>
+  <p id="ovMsg">Place elemental tiles to create chain reactions!</p>
+  <div class="how-to" id="howTo">
+    Place tiles on the 6×6 grid. When 3+ matching elements connect horizontally, vertically, or diagonally, they chain and clear for bonus points! Bigger chains = more points. Use all 36 moves wisely!
+  </div>
+  <button class="btn" onclick="newGame()">⚡ Play</button>
+</div>
+
+<script>
+// Audio
+const actx=new(window.AudioContext||window.webkitAudioContext)();
+function tone(f,t,d,v=0.08){const o=actx.createOscillator(),g=actx.createGain();o.connect(g);g.connect(actx.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.start();o.stop(actx.currentTime+d);}
+function placeSound(){tone(500,'sine',0.06);}
+function chainSound(len){
+  for(let i=0;i<Math.min(len,6);i++){
+    setTimeout(()=>tone(400+i*120,'square',0.12,0.06),i*70);
+  }
+}
+function bigChain(){[0,60,120,180,240].forEach((d,i)=>setTimeout(()=>tone(500+i*100,'square',0.15,0.08),d));}
+function gameOverSound(){tone(400,'triangle',0.2);setTimeout(()=>tone(300,'triangle',0.3),200);}
+
+const ELEMENTS=[
+  {id:'fire',emoji:'🔥',name:'Fire'},
+  {id:'water',emoji:'💧',name:'Water'},
+  {id:'earth',emoji:'🌿',name:'Earth'},
+  {id:'air',emoji:'💨',name:'Air'},
+  {id:'lightning',emoji:'⚡',name:'Lightning'}
+];
+
+const GRID=6;
+let grid,score,chains,bestScore=0,movesLeft,nextQueue,gameActive;
+
+function randomElement(){return ELEMENTS[Math.floor(Math.random()*ELEMENTS.length)];}
+
+function newGame(){
+  actx.resume();
+  grid=Array.from({length:GRID},()=>Array(GRID).fill(null));
+  score=0;chains=0;movesLeft=36;gameActive=true;
+  nextQueue=[randomElement(),randomElement(),randomElement()];
+  document.getElementById('overlay').style.display='none';
+  updateHUD();renderBoard();renderNext();
+}
+
+function updateHUD(){
+  document.getElementById('score').textContent=score;
+  document.getElementById('chains').textContent=chains;
+  document.getElementById('best').textContent=bestScore;
+  document.getElementById('moves').textContent=movesLeft;
+}
+
+function renderNext(){
+  const tiles=['nextTile','nextTile2','nextTile3'];
+  tiles.forEach((id,i)=>{
+    const el=document.getElementById(id);
+    if(nextQueue[i]){
+      el.textContent=nextQueue[i].emoji;
+      el.className='next-tile '+nextQueue[i].id;
+    }
+  });
+}
+
+function renderBoard(){
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  for(let r=0;r<GRID;r++){
+    for(let c=0;c<GRID;c++){
+      const cell=document.createElement('div');
+      cell.className='cell';
+      if(grid[r][c]){
+        cell.classList.add('filled',grid[r][c].id);
+        cell.textContent=grid[r][c].emoji;
+      }
+      cell.onclick=()=>placeElement(r,c);
+      board.appendChild(cell);
+    }
+  }
+}
+
+function placeElement(r,c){
+  if(!gameActive||grid[r][c]||movesLeft<=0)return;
+  
+  const element=nextQueue.shift();
+  nextQueue.push(randomElement());
+  
+  grid[r][c]=element;
+  movesLeft--;
+  placeSound();
+  
+  updateHUD();renderBoard();renderNext();
+  
+  // Check for chains after a small delay for visual effect
+  setTimeout(()=>checkChains(),200);
+}
+
+function checkChains(){
+  let found=true;
+  let totalCleared=0;
+  let chainMultiplier=1;
+  
+  while(found){
+    found=false;
+    const toRemove=new Set();
+    
+    // Check all directions for each cell
+    for(let r=0;r<GRID;r++){
+      for(let c=0;c<GRID;c++){
+        if(!grid[r][c])continue;
+        const elem=grid[r][c].id;
+        
+        // Check 4 directions: horizontal, vertical, diagonal-right, diagonal-left
+        const directions=[[0,1],[1,0],[1,1],[1,-1]];
+        
+        for(const[dr,dc]of directions){
+          const chain=[{r,c}];
+          let nr=r+dr,nc=c+dc;
+          while(nr>=0&&nr<GRID&&nc>=0&&nc<GRID&&grid[nr][nc]&&grid[nr][nc].id===elem){
+            chain.push({r:nr,c:nc});
+            nr+=dr;nc+=dc;
+          }
+          
+          if(chain.length>=3){
+            chain.forEach(({r:cr,c:cc})=>toRemove.add(cr*GRID+cc));
+          }
+        }
+      }
+    }
+    
+    if(toRemove.size>0){
+      found=true;
+      totalCleared+=toRemove.size;
+      chains++;
+      
+      const points=toRemove.size*10*chainMultiplier;
+      score+=points;
+      
+      // Show combo popup
+      if(chainMultiplier>1||toRemove.size>=4){
+        showCombo(toRemove.size>=5?'🔥 MEGA CHAIN! +'+points:
+                  toRemove.size>=4?'⚡ GREAT! +'+points:
+                  '✨ Chain! +'+points);
+      }
+      
+      if(toRemove.size>=5)bigChain();
+      else chainSound(toRemove.size);
+      
+      // Animate clearing
+      const cells=document.querySelectorAll('.cell');
+      toRemove.forEach(idx=>{
+        if(cells[idx])cells[idx].classList.add('clearing');
+      });
+      
+      // Actually remove after animation
+      toRemove.forEach(idx=>{
+        const cr=Math.floor(idx/GRID),cc=idx%GRID;
+        grid[cr][cc]=null;
+      });
+      
+      // Apply gravity — tiles fall down
+      for(let c2=0;c2<GRID;c2++){
+        const col=[];
+        for(let r2=GRID-1;r2>=0;r2--){
+          if(grid[r2][c2])col.push(grid[r2][c2]);
+        }
+        for(let r2=GRID-1;r2>=0;r2--){
+          grid[r2][c2]=col[GRID-1-r2]||null;
+        }
+      }
+      
+      chainMultiplier++;
+      updateHUD();
+      
+      // Re-render and check again
+      setTimeout(()=>renderBoard(),300);
+    }
+  }
+  
+  updateHUD();
+  renderBoard();
+  
+  // Check game over
+  if(movesLeft<=0&&gameActive){
+    // Check if any chains possible with remaining board
+    gameActive=false;
+    if(score>bestScore)bestScore=score;
+    updateHUD();
+    setTimeout(()=>{
+      gameOverSound();
+      const ov=document.getElementById('overlay');
+      document.getElementById('ovTitle').textContent='Game Over!';
+      document.getElementById('ovScore').textContent='Score: '+score;
+      document.getElementById('ovMsg').textContent=
+        score>=500?'🔥 Amazing! You\'re an Elemental Master!':
+        score>=300?'⚡ Great job! Strong chain reactions!':
+        score>=150?'✨ Nice work! Keep practicing!':
+        '💪 Good try! Aim for bigger chains!';
+      document.getElementById('howTo').textContent='Tip: Place matching elements adjacent to each other to create chains of 3 or more!';
+      ov.querySelector('.btn').textContent='⚡ Play Again';
+      ov.style.display='flex';
+    },500);
+  }
+}
+
+function showCombo(text){
+  const popup=document.createElement('div');
+  popup.className='combo-popup';
+  popup.textContent=text;
+  document.body.appendChild(popup);
+  setTimeout(()=>popup.remove(),1000);
+}
+
+// Show intro overlay on load
+document.getElementById('overlay').style.display='flex';
+</script>
 </body>
 </html>
