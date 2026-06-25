@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium - RehaVerse Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-page="premium">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo">
+        <div class="logo-icon">🎮</div>
+        <div class="logo-text"><span>RehaVerse</span> Games</div>
+      </a>
+      <nav class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="premium.html" class="premium-link active">⭐ Premium</a>
+      </nav>
+      <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+    </div>
+  </header>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav" id="mobileNav">
+    <button class="close-btn" id="closeMenuBtn">✕</button>
+    <a href="index.html">🎮 Home</a>
+    <a href="about.html">ℹ️ About</a>
+    <a href="premium.html">⭐ Premium</a>
+  </div>
+
+  <!-- Premium Hero -->
+  <section class="premium-section">
+    <h2>Go <span class="gold">Premium</span> ⭐</h2>
+    <p>Remove all ads, unlock exclusive games, and support independent game development.</p>
+
+    <div class="pricing-cards">
+      <!-- Free Tier -->
+      <div class="pricing-card">
+        <h3>Free Player</h3>
+        <div class="pricing-price">$0</div>
+        <div class="pricing-period">forever free</div>
+        <ul class="pricing-features">
+          <li>Access to all free games</li>
+          <li>Basic leaderboards</li>
+          <li>Ad-supported experience</li>
+          <li>Community access</li>
+        </ul>
+        <a href="index.html" class="pricing-btn primary">Play Free Games</a>
+      </div>
+
+      <!-- Premium Monthly -->
+      <div class="pricing-card popular">
+        <h3>Premium Monthly</h3>
+        <div class="pricing-price">$2.99 <span>/mo</span></div>
+        <div class="pricing-period">cancel anytime</div>
+        <ul class="pricing-features">
+          <li>100% ad-free gaming</li>
+          <li>Exclusive premium games</li>
+          <li>Priority leaderboards</li>
+          <li>Custom profile badge</li>
+          <li>Early access to new games</li>
+          <li>Support indie development</li>
+        </ul>
+        <button class="pricing-btn gold" onclick="alert('Premium subscriptions coming soon! Stay tuned.')">Get Premium</button>
+      </div>
+
+      <!-- Premium Yearly -->
+      <div class="pricing-card">
+        <h3>Premium Yearly</h3>
+        <div class="pricing-price">$24.99 <span>/yr</span></div>
+        <div class="pricing-period">save 30% — billed annually</div>
+        <ul class="pricing-features">
+          <li>Everything in Monthly</li>
+          <li>2 months free</li>
+          <li>Exclusive yearly badge</li>
+          <li>Vote on new game ideas</li>
+          <li>Direct developer access</li>
+          <li>Special event invites</li>
+        </ul>
+        <button class="pricing-btn primary" onclick="alert('Premium subscriptions coming soon! Stay tuned.')">Get Yearly</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Donate Section -->
+  <section class="donate-section">
+    <div class="donate-card">
+      <h2>☕ Not ready for Premium?</h2>
+      <p>No worries! You can still support us with a one-time tip. Every contribution helps us build more amazing games.</p>
+      <div class="donate-buttons">
+        <button class="donate-btn small" onclick="window.open('https://buymeacoffee.com/', '_blank')">☕ $3</button>
+        <button class="donate-btn medium" onclick="window.open('https://buymeacoffee.com/', '_blank')">☕☕ $5</button>
+        <button class="donate-btn large" onclick="window.open('https://buymeacoffee.com/', '_blank')">☕☕☕ $10</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="logo">
+          <div class="logo-icon">🎮</div>
+          <div class="logo-text"><span>RehaVerse</span> Games</div>
+        </div>
+        <p>Free online games for everyone. Built with ❤️ by RehaVerse Studios.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Browse</h4>
+        <a href="index.html">All Games</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="about.html">About Us</a>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+      </div>
+      <div class="footer-col">
+        <h4>Connect</h4>
+        <a href="#">Twitter / X</a>
+        <a href="#">YouTube</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2024-2026 RehaVerse Studios. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

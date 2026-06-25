@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Pong - RehaVerse Games</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0a1a;display:flex;align-items:center;justify-content:center;height:100vh;overflow:hidden;touch-action:none}
+  canvas{border-radius:8px;max-width:100vw;max-height:100vh}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const actx=new(window.AudioContext||window.webkitAudioContext)();
+function tone(f,t,d){const o=actx.createOscillator(),g=actx.createGain();o.connect(g);g.connect(actx.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(0.08,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.start();o.stop(actx.currentTime+d);}
+function paddleHit(){tone(440,'square',0.05);}
+function wallHit(){tone(300,'sine',0.04);}
+function scoreP(){tone(600,'square',0.08);setTimeout(()=>tone(800,'square',0.1),60);}
+function scoreAI(){tone(200,'sawtooth',0.15);}
+
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=Math.min(window.innerWidth-10,500);H=Math.min(window.innerHeight-10,600);c.width=W;c.height=H;}
+window.addEventListener('resize',resize);resize();
+
+const PW=12,PH=80,BR=8;
+let p1,p2,ball,sL,sR;
+
+function init(){
+  actx.resume();p1={x:16,y:H/2-PH/2};p2={x:W-16-PW,y:H/2-PH/2};
+  sL=0;sR=0;resetBall();
+}
+
+function resetBall(){ball={x:W/2,y:H/2,dx:4*(Math.random()>0.5?1:-1),dy:2.5*(Math.random()>0.5?1:-1)};}
+
+function update(){
+  ball.x+=ball.dx;ball.y+=ball.dy;
+  if(ball.y-BR<0){ball.y=BR;ball.dy=Math.abs(ball.dy);wallHit();}
+  if(ball.y+BR>H){ball.y=H-BR;ball.dy=-Math.abs(ball.dy);wallHit();}
+  if(ball.dx<0&&ball.x-BR<=p1.x+PW&&ball.y>p1.y&&ball.y<p1.y+PH){ball.dx=Math.abs(ball.dx)*1.04;ball.dy+=((ball.y-(p1.y+PH/2))/(PH/2))*3;paddleHit();}
+  if(ball.dx>0&&ball.x+BR>=p2.x&&ball.y>p2.y&&ball.y<p2.y+PH){ball.dx=-Math.abs(ball.dx)*1.04;ball.dy+=((ball.y-(p2.y+PH/2))/(PH/2))*3;paddleHit();}
+  if(ball.x<0){sR++;scoreAI();resetBall();}
+  if(ball.x>W){sL++;scoreP();resetBall();}
+  // AI
+  const target=ball.y-PH/2;p2.y+=(target-p2.y)*0.055;
+  p2.y=Math.max(0,Math.min(H-PH,p2.y));
+  // Clamp ball speed
+  ball.dx=Math.max(-8,Math.min(8,ball.dx));ball.dy=Math.max(-6,Math.min(6,ball.dy));
+}
+
+function draw(){
+  ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,W,H);
+  ctx.setLineDash([10,10]);ctx.strokeStyle='#1a1a3e';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();ctx.setLineDash([]);
+  // Paddles
+  ctx.shadowColor='#22c55e';ctx.shadowBlur=8;ctx.fillStyle='#22c55e';ctx.beginPath();ctx.roundRect(p1.x,p1.y,PW,PH,6);ctx.fill();
+  ctx.shadowColor='#ef4444';ctx.fillStyle='#ef4444';ctx.beginPath();ctx.roundRect(p2.x,p2.y,PW,PH,6);ctx.fill();
+  ctx.shadowBlur=0;
+  // Ball
+  ctx.shadowColor='#fff';ctx.shadowBlur=10;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(ball.x,ball.y,BR,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+  // Score
+  ctx.fillStyle='#fff';ctx.font='bold 42px Segoe UI';ctx.textAlign='center';
+  ctx.fillText(sL,W/2-55,55);ctx.fillText(sR,W/2+55,55);
+  ctx.font='11px Segoe UI';ctx.fillStyle='#64748b';ctx.fillText('YOU',W/2-55,70);ctx.fillText('AI',W/2+55,70);
+}
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+c.addEventListener('mousemove',e=>{const r=c.getBoundingClientRect();p1.y=Math.max(0,Math.min(H-PH,(e.clientY-r.top)*(H/r.height)-PH/2));});
+c.addEventListener('touchmove',e=>{e.preventDefault();const r=c.getBoundingClientRect();p1.y=Math.max(0,Math.min(H-PH,(e.touches[0].clientY-r.top)*(H/r.height)-PH/2));});
+c.addEventListener('click',()=>actx.resume());
+init();loop();
+</script>
+</body>
+</html>

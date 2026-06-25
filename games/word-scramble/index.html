@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Scramble - RehaVerse Games</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Segoe UI',sans-serif;color:#fff;padding:20px}
+  h1{font-size:1.8rem;color:#8b5cf6;margin-bottom:8px}
+  .stats{display:flex;gap:18px;margin-bottom:20px;font-size:0.9rem;color:#94a3b8}.stats span{color:#8b5cf6;font-weight:700}
+  .scrambled{font-size:2.8rem;font-weight:800;letter-spacing:10px;color:#f59e0b;margin-bottom:8px;min-height:50px;text-align:center}
+  @media(min-width:600px){.scrambled{font-size:3.5rem;letter-spacing:14px}}
+  .hint{font-size:0.9rem;color:#64748b;margin-bottom:18px;min-height:22px;text-align:center}
+  input{width:100%;max-width:360px;padding:16px 24px;background:#1a1a3e;border:2px solid #24245a;border-radius:14px;color:#fff;font-size:1.3rem;text-align:center;letter-spacing:5px;outline:none;text-transform:uppercase}
+  input:focus{border-color:#8b5cf6;box-shadow:0 0 0 3px rgba(139,92,246,0.2)}
+  .msg{margin-top:14px;font-size:1.1rem;font-weight:700;min-height:26px}
+  .msg.correct{color:#10b981}.msg.wrong{color:#ef4444}
+  .btns{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap;justify-content:center}
+  .btn{padding:12px 22px;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-size:0.95rem}
+  .btn-primary{background:#8b5cf6;color:#fff}.btn-secondary{background:#1a1a3e;color:#94a3b8;border:1px solid #24245a}
+  .btn:active{transform:scale(0.97)}
+  .streak-badge{background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;padding:4px 12px;border-radius:50px;font-size:0.75rem;font-weight:800}
+</style>
+</head>
+<body>
+<h1>📝 Word Scramble</h1>
+<div class="stats">
+  <div>Score: <span id="score">0</span></div>
+  <div>Streak: <span id="streak">0</span></div>
+  <div>Time: <span id="timer">30s</span></div>
+</div>
+<div class="scrambled" id="scrambled"></div>
+<div class="hint" id="hint"></div>
+<input type="text" id="guess" placeholder="Type your answer" autocomplete="off" autofocus>
+<div class="msg" id="msg"></div>
+<div class="btns">
+  <button class="btn btn-secondary" onclick="showHint()">💡 Hint</button>
+  <button class="btn btn-secondary" onclick="skipWord()">⏭ Skip</button>
+  <button class="btn btn-primary" onclick="checkGuess()">✓ Check</button>
+</div>
+
+<script>
+const actx=new(window.AudioContext||window.webkitAudioContext)();
+function tone(f,t,d){const o=actx.createOscillator(),g=actx.createGain();o.connect(g);g.connect(actx.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(0.1,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.start();o.stop(actx.currentTime+d);}
+function correctSound(){[0,60,120].forEach((d,i)=>setTimeout(()=>tone(500+i*120,'square',0.1),d));}
+function wrongSound(){tone(250,'sawtooth',0.15);}
+function skipSound(){tone(300,'triangle',0.1);}
+function tickSound(){tone(800,'sine',0.02);}
+
+const WORDS=[
+  {word:'PLANET',hint:'A celestial body orbiting a star'},{word:'BRIDGE',hint:'Structure over water'},
+  {word:'GUITAR',hint:'A musical instrument with strings'},{word:'CASTLE',hint:'A large fortified building'},
+  {word:'FOREST',hint:'A large area covered with trees'},{word:'ROCKET',hint:'A vehicle that travels to space'},
+  {word:'DRAGON',hint:'A mythical fire-breathing creature'},{word:'PUZZLE',hint:'A game that tests your brain'},
+  {word:'ISLAND',hint:'Land surrounded by water'},{word:'KNIGHT',hint:'A medieval warrior'},
+  {word:'ANCHOR',hint:'Keeps a ship in place'},{word:'BREEZE',hint:'A gentle wind'},
+  {word:'CANDLE',hint:'Gives light when lit'},{word:'DESERT',hint:'A dry sandy area'},
+  {word:'FALCON',hint:'A fast bird of prey'},{word:'JUNGLE',hint:'Dense tropical vegetation'},
+  {word:'MARBLE',hint:'A type of stone or a small glass ball'},{word:'PIRATE',hint:'A sea robber'},
+  {word:'SILVER',hint:'A precious white metal'},{word:'THRONE',hint:'A royal seat'},
+  {word:'TUNNEL',hint:'An underground passage'},{word:'VOYAGE',hint:'A long journey by sea'},
+  {word:'WINTER',hint:'The coldest season'},{word:'ZENITH',hint:'The highest point'},
+  {word:'ORANGE',hint:'A citrus fruit'},{word:'TEMPLE',hint:'A place of worship'},
+  {word:'STREAM',hint:'A small river'},{word:'SHIELD',hint:'Used for protection'},
+  {word:'TROPHY',hint:'A prize for winning'},{word:'SUNSET',hint:'When the sun goes down'},
+];
+
+let current,score=0,streak=0,timeLeft,timer,hintShown,used=[];
+
+function scramble(word){const a=word.split('');for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a.join('')===word?scramble(word):a.join('');}
+
+function nextWord(){
+  if(used.length>=WORDS.length)used=[];
+  let idx;do{idx=Math.floor(Math.random()*WORDS.length);}while(used.includes(idx));
+  used.push(idx);current=WORDS[idx];
+  document.getElementById('scrambled').textContent=scramble(current.word);
+  document.getElementById('hint').textContent='';
+  document.getElementById('msg').textContent='';document.getElementById('msg').className='msg';
+  document.getElementById('guess').value='';document.getElementById('guess').focus();
+  hintShown=false;timeLeft=30;
+  if(timer)clearInterval(timer);
+  timer=setInterval(()=>{
+    timeLeft--;document.getElementById('timer').textContent=timeLeft+'s';
+    if(timeLeft<=5&&timeLeft>0)tickSound();
+    if(timeLeft<=0){clearInterval(timer);wrongSound();showMsg("Time's up! It was: "+current.word,'wrong');streak=0;document.getElementById('streak').textContent=0;setTimeout(nextWord,2000);}
+  },1000);
+}
+
+function checkGuess(){
+  actx.resume();const guess=document.getElementById('guess').value.trim().toUpperCase();
+  if(!guess)return;
+  if(guess===current.word){
+    score+=hintShown?5:10;streak++;
+    document.getElementById('score').textContent=score;document.getElementById('streak').textContent=streak;
+    correctSound();showMsg('Correct! 🎉'+(streak>=3?' 🔥 '+streak+' streak!':''),'correct');
+    clearInterval(timer);setTimeout(nextWord,1500);
+  }else{streak=0;document.getElementById('streak').textContent=0;wrongSound();showMsg('Try again!','wrong');}
+}
+
+function showHint(){hintShown=true;document.getElementById('hint').textContent='💡 '+current.hint;}
+function skipWord(){skipSound();streak=0;document.getElementById('streak').textContent=0;clearInterval(timer);nextWord();}
+function showMsg(t,cls){const el=document.getElementById('msg');el.textContent=t;el.className='msg '+cls;}
+
+document.getElementById('guess').addEventListener('keydown',e=>{if(e.key==='Enter')checkGuess();});
+document.getElementById('guess').addEventListener('focus',()=>actx.resume());
+nextWord();
+</script>
+</body>
+</html>

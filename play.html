@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Play Game - RehaVerse Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .game-iframe { width: 100%; height: 75vh; min-height: 400px; max-height: 800px; }
+    @media(min-width: 1024px) { .game-iframe { height: 80vh; } }
+    @media(max-width: 480px) { .game-iframe { height: 70vh; min-height: 300px; } }
+  </style>
+  <!-- Google AdSense -->
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script> -->
+</head>
+<body data-page="play">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo">
+        <div class="logo-icon">🎮</div>
+        <div class="logo-text"><span>RehaVerse</span> Games</div>
+      </a>
+
+      <nav class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="premium.html" class="premium-link">⭐ Premium</a>
+      </nav>
+
+      <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+    </div>
+  </header>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav" id="mobileNav">
+    <button class="close-btn" id="closeMenuBtn">✕</button>
+    <a href="index.html">🎮 Home</a>
+    <a href="about.html">ℹ️ About</a>
+    <a href="premium.html">⭐ Premium</a>
+  </div>
+
+  <!-- Game Player -->
+  <section class="game-player-section">
+    <div id="gamePlayerWrapper" class="game-player-wrapper">
+      <iframe id="gameIframe" class="game-iframe" title="Game Player" sandbox="allow-scripts allow-same-origin allow-popups" loading="lazy"></iframe>
+      <div class="game-player-controls">
+        <span class="game-player-title" id="gamePlayerTitle">Loading...</span>
+        <div class="control-buttons">
+          <button class="control-btn" onclick="location.reload()">🔄 Restart</button>
+          <button class="control-btn fullscreen-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ad Banner -->
+    <div class="ad-banner" style="margin-top: 24px; padding: 0;">
+      <div class="ad-placeholder">
+        <!-- AdSense Ad Unit -->
+        Ad Space — Connect Google AdSense
+      </div>
+    </div>
+
+    <!-- Game Details + Sidebar Ad -->
+    <div class="game-details-panel">
+      <div class="game-description">
+        <h2 id="gameDescTitle">About this game</h2>
+        <p id="gameDescText">Loading game information...</p>
+        <div class="game-tags" id="gameTags"></div>
+      </div>
+      <div class="sidebar-ad">
+        <!-- AdSense Sidebar Ad Unit -->
+        Ad Space
+      </div>
+    </div>
+
+    <!-- Related Games -->
+    <div style="margin-top: 40px;">
+      <div class="section-header">
+        <h2>🎮 You might also like</h2>
+        <a href="index.html">See all →</a>
+      </div>
+      <div id="relatedGames" class="games-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));"></div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="logo">
+          <div class="logo-icon">🎮</div>
+          <div class="logo-text"><span>RehaVerse</span> Games</div>
+        </div>
+        <p>Free online games for everyone. Play instantly in your browser — no downloads required. Built with ❤️ by RehaVerse Studios.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Browse</h4>
+        <a href="index.html">All Games</a>
+        <a href="index.html?cat=puzzle">Puzzle</a>
+        <a href="index.html?cat=arcade">Arcade</a>
+        <a href="index.html?cat=action">Action</a>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <a href="about.html">About Us</a>
+        <a href="premium.html">Premium</a>
+        <a href="privacy.html">Privacy Policy</a>
+        <a href="terms.html">Terms of Service</a>
+      </div>
+      <div class="footer-col">
+        <h4>Connect</h4>
+        <a href="#">Twitter / X</a>
+        <a href="#">Instagram</a>
+        <a href="#">YouTube</a>
+        <a href="#">Discord</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2024-2026 RehaVerse Studios. All rights reserved.</p>
+      <div class="footer-social">
+        <a href="#" title="Twitter">𝕏</a>
+        <a href="#" title="YouTube">▶</a>
+        <a href="#" title="Discord">💬</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

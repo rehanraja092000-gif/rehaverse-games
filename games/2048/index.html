@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>2048 - RehaVerse Games</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Segoe UI',sans-serif;color:#fff;touch-action:none;padding:16px}
+  .top{display:flex;justify-content:space-between;align-items:center;width:100%;max-width:460px;margin-bottom:14px}
+  .top h1{font-size:2.4rem;color:#f59e0b;font-weight:800}
+  .scores{display:flex;gap:10px}
+  .score-box{background:#1a1a3e;padding:8px 18px;border-radius:10px;text-align:center;min-width:70px}
+  .score-box .label{font-size:0.6rem;color:#64748b;text-transform:uppercase;letter-spacing:1px}
+  .score-box .val{font-size:1.3rem;font-weight:800;color:#f59e0b}
+  #board{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:10px;background:#1a1a3e;border-radius:14px;width:100%;max-width:460px}
+  .tile{aspect-ratio:1;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;transition:all 0.1s;font-size:2rem}
+  @media(max-width:400px){.tile{font-size:1.4rem}}
+  @media(min-width:500px){.tile{font-size:2.4rem}}
+  .t0{background:#12122a}.t2{background:#334155;color:#f1f5f9}.t4{background:#475569;color:#f1f5f9}
+  .t8{background:#f97316;color:#fff}.t16{background:#ea580c;color:#fff}.t32{background:#ef4444;color:#fff}
+  .t64{background:#dc2626;color:#fff}.t128{background:#f59e0b;color:#fff}.t256{background:#eab308;color:#fff}
+  .t512{background:#a855f7;color:#fff}.t1024{background:#7c3aed;color:#fff;font-size:1.6rem}
+  .t2048{background:#ec4899;color:#fff;font-size:1.6rem;box-shadow:0 0 24px #ec4899}
+  .tsuper{background:linear-gradient(135deg,#ec4899,#f59e0b);color:#fff;font-size:1.3rem}
+  .new-btn{margin-top:16px;padding:12px 32px;background:#f59e0b;color:#000;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer}
+  #overlay{display:none;position:fixed;inset:0;background:rgba(10,10,26,0.92);z-index:10;flex-direction:column;align-items:center;justify-content:center}
+  #overlay h2{font-size:2.2rem;margin-bottom:8px}
+  #overlay p{color:#f59e0b;font-size:1.3rem;margin-bottom:20px}
+  #overlay button{padding:14px 32px;background:#f59e0b;color:#000;border:none;border-radius:10px;font-size:1.1rem;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="top">
+  <h1>2048</h1>
+  <div class="scores">
+    <div class="score-box"><div class="label">Score</div><div class="val" id="score">0</div></div>
+    <div class="score-box"><div class="label">Best</div><div class="val" id="best">0</div></div>
+  </div>
+</div>
+<div id="board"></div>
+<button class="new-btn" onclick="init()">New Game</button>
+<div id="overlay"><h2 id="oTitle"></h2><p id="oScore"></p><button onclick="init()">Play Again</button></div>
+
+<script>
+const actx=new(window.AudioContext||window.webkitAudioContext)();
+function playTone(f,d){const o=actx.createOscillator(),g=actx.createGain();o.connect(g);g.connect(actx.destination);o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(0.12,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.start();o.stop(actx.currentTime+d);}
+function mergeSound(){playTone(520,0.1);setTimeout(()=>playTone(660,0.12),60);}
+function moveSound(){playTone(300,0.06);}
+function winSound(){[0,100,200,300].forEach((d,i)=>setTimeout(()=>playTone(500+i*100,0.2),d));}
+function loseSound(){playTone(200,0.3);setTimeout(()=>playTone(150,0.4),200);}
+
+let grid,score,bestScore=0;
+const board=document.getElementById('board');
+
+function init(){
+  actx.resume();
+  grid=Array(4).fill(null).map(()=>Array(4).fill(0));
+  score=0;addTile();addTile();render();
+  document.getElementById('overlay').style.display='none';
+}
+
+function addTile(){
+  const e=[];grid.forEach((r,i)=>r.forEach((v,j)=>{if(!v)e.push([i,j]);}));
+  if(!e.length)return;const[r,c]=e[Math.floor(Math.random()*e.length)];
+  grid[r][c]=Math.random()<0.9?2:4;
+}
+
+function render(){
+  board.innerHTML='';
+  grid.forEach(row=>row.forEach(v=>{
+    const d=document.createElement('div');
+    const cls=v<=2048?v:'super';
+    d.className='tile t'+cls;d.textContent=v||'';board.appendChild(d);
+  }));
+  document.getElementById('score').textContent=score;
+  if(score>bestScore){bestScore=score;document.getElementById('best').textContent=bestScore;}
+}
+
+function slide(row){
+  let a=row.filter(v=>v),merged=false;
+  for(let i=0;i<a.length-1;i++){if(a[i]===a[i+1]){a[i]*=2;score+=a[i];a.splice(i+1,1);merged=true;}}
+  while(a.length<4)a.push(0);
+  return{row:a,merged};
+}
+
+function move(dir){
+  const old=JSON.stringify(grid);let anyMerge=false;
+  if(dir==='left')grid=grid.map(r=>{const s=slide(r);if(s.merged)anyMerge=true;return s.row;});
+  else if(dir==='right')grid=grid.map(r=>{const s=slide([...r].reverse());if(s.merged)anyMerge=true;return s.row.reverse();});
+  else if(dir==='up'){for(let c=0;c<4;c++){const col=[grid[0][c],grid[1][c],grid[2][c],grid[3][c]];const s=slide(col);if(s.merged)anyMerge=true;for(let r=0;r<4;r++)grid[r][c]=s.row[r];}}
+  else if(dir==='down'){for(let c=0;c<4;c++){const col=[grid[3][c],grid[2][c],grid[1][c],grid[0][c]];const s=slide(col);if(s.merged)anyMerge=true;const res=s.row.reverse();for(let r=0;r<4;r++)grid[r][c]=res[r];}}
+  if(JSON.stringify(grid)!==old){
+    if(anyMerge)mergeSound();else moveSound();
+    addTile();render();checkEnd();
+  }
+}
+
+function checkEnd(){
+  if(grid.flat().includes(2048)){winSound();showOv('You Win! 🎉');}
+  if(grid.flat().includes(0))return;
+  for(let r=0;r<4;r++)for(let c=0;c<4;c++){
+    if(c<3&&grid[r][c]===grid[r][c+1])return;
+    if(r<3&&grid[r][c]===grid[r+1][c])return;
+  }
+  loseSound();showOv('Game Over');
+}
+
+function showOv(t){
+  document.getElementById('oTitle').textContent=t;
+  document.getElementById('oScore').textContent='Score: '+score;
+  document.getElementById('overlay').style.display='flex';
+}
+
+document.addEventListener('keydown',e=>{
+  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();}
+  if(e.key==='ArrowLeft')move('left');else if(e.key==='ArrowRight')move('right');
+  else if(e.key==='ArrowUp')move('up');else if(e.key==='ArrowDown')move('down');
+});
+
+let tx,ty;
+document.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;});
+document.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  if(Math.max(Math.abs(dx),Math.abs(dy))<30)return;
+  if(Math.abs(dx)>Math.abs(dy))move(dx>0?'right':'left');else move(dy>0?'down':'up');
+});
+
+init();
+</script>
+</body>
+</html>
