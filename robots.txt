@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /games/*/index.html
+
+Sitemap: https://rehaverse-games.vercel.app/sitemap.xml
+
+# RehaVerse Games - Free Online Gaming Platform
+# https://rehaverse-games.vercel.app
