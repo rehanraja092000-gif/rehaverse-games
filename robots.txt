@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /games/*/index.html
 
-Sitemap: https://rehaverse-games.vercel.app/sitemap.xml
+Sitemap: https://www.rehaversestudio.com/sitemap.xml
 
 # RehaVerse Games - Free Online Gaming Platform
-# https://rehaverse-games.vercel.app
+# https://www.rehaversestudio.com
