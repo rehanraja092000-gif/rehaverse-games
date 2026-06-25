@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typing Speed - RehaVerse Games</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:'Segoe UI',sans-serif;color:#fff;padding:20px}
+  h1{font-size:2rem;color:#10b981;margin-bottom:6px}
+  .subtitle{color:#64748b;margin-bottom:20px;font-size:0.9rem}
+  .stats{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;justify-content:center}
+  .stat{background:#1a1a3e;padding:10px 20px;border-radius:12px;text-align:center;min-width:80px;border:1px solid #24245a}
+  .stat .val{font-size:1.6rem;font-weight:800;color:#10b981}
+  .stat .lbl{font-size:0.65rem;color:#64748b;text-transform:uppercase;letter-spacing:1px}
+  .word-display{background:#12122a;border:2px solid #24245a;border-radius:16px;padding:24px 32px;margin-bottom:20px;max-width:700px;width:100%;min-height:80px;font-size:1.5rem;line-height:2;letter-spacing:1px;text-align:center}
+  @media(min-width:600px){.word-display{font-size:1.8rem;padding:32px 40px}}
+  .char{transition:color 0.1s}
+  .char.correct{color:#10b981}
+  .char.wrong{color:#ef4444;text-decoration:underline}
+  .char.current{background:#7c3aed;color:#fff;border-radius:4px;padding:0 2px}
+  .char.pending{color:#4a5568}
+  input{width:100%;max-width:500px;padding:16px 24px;background:#1a1a3e;border:2px solid #24245a;border-radius:14px;color:#fff;font-size:1.2rem;outline:none;text-align:center}
+  input:focus{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,0.2)}
+  .btn{margin-top:20px;padding:14px 32px;background:#10b981;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:700;cursor:pointer}
+  .btn:active{transform:scale(0.97)}
+  .results{background:#1a1a3e;border-radius:16px;padding:32px;text-align:center;border:1px solid #24245a;display:none;max-width:400px;width:100%}
+  .results h2{font-size:1.8rem;margin-bottom:16px;color:#10b981}
+  .results .big{font-size:3rem;font-weight:800;color:#f59e0b;margin-bottom:8px}
+  .results p{color:#94a3b8;margin-bottom:6px}
+  .progress{width:100%;max-width:500px;height:6px;background:#1a1a3e;border-radius:3px;margin-bottom:20px;overflow:hidden}
+  .progress-bar{height:100%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:3px;transition:width 0.3s}
+</style>
+</head>
+<body>
+<h1>⌨️ Typing Speed Test</h1>
+<div class="subtitle">Type the words as fast and accurately as you can!</div>
+<div class="stats">
+  <div class="stat"><div class="val" id="wpm">0</div><div class="lbl">WPM</div></div>
+  <div class="stat"><div class="val" id="acc">100%</div><div class="lbl">Accuracy</div></div>
+  <div class="stat"><div class="val" id="timer">30</div><div class="lbl">Seconds</div></div>
+</div>
+<div class="progress"><div class="progress-bar" id="prog" style="width:100%"></div></div>
+<div class="word-display" id="display"></div>
+<input type="text" id="input" placeholder="Start typing..." autocomplete="off" autofocus>
+<button class="btn" onclick="startTest()">Start Test</button>
+<div class="results" id="results">
+  <h2>Results</h2>
+  <div class="big" id="finalWpm">0</div>
+  <p>Words Per Minute</p>
+  <p id="finalAcc"></p>
+  <p id="finalChars"></p>
+  <button class="btn" onclick="startTest()">Try Again</button>
+</div>
+
+<script>
+const actx=new(window.AudioContext||window.webkitAudioContext)();
+function tone(f,t,d){const o=actx.createOscillator(),g=actx.createGain();o.connect(g);g.connect(actx.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(0.04,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.start();o.stop(actx.currentTime+d);}
+function keySound(){tone(600+Math.random()*200,'sine',0.03);}
+function wrongKey(){tone(200,'square',0.08);}
+function doneSound(){[0,80,160,240].forEach((d,i)=>setTimeout(()=>tone(500+i*100,'square',0.1),d));}
+
+const WORDS=["the","be","to","of","and","a","in","that","have","it","for","not","on","with","he","as","you","do","at","this","but","his","by","from","they","we","her","she","or","an","will","my","one","all","would","there","their","what","so","up","out","if","about","who","get","which","go","me","when","make","can","like","time","no","just","him","know","take","people","into","year","your","good","some","could","them","see","other","than","then","now","look","only","come","its","over","think","also","back","after","use","two","how","our","work","first","well","way","even","new","want","because","any","these","give","day","most","us","great","world","still","between","life","being","under","never","start","game","play","level","score","point","fast","quick","speed","type","write","code","best","high","long","word","text","move","run","jump","fly","win","try","next","last"];
+
+let text='',pos=0,correct=0,wrong=0,started=false,timeLeft=30,timerInterval;
+
+function generateText(){
+  const words=[];for(let i=0;i<50;i++)words.push(WORDS[Math.floor(Math.random()*WORDS.length)]);
+  return words.join(' ');
+}
+
+function startTest(){
+  actx.resume();
+  text=generateText();pos=0;correct=0;wrong=0;started=false;timeLeft=30;
+  document.getElementById('results').style.display='none';
+  document.getElementById('input').value='';
+  document.getElementById('input').style.display='block';
+  document.getElementById('input').focus();
+  document.getElementById('wpm').textContent='0';
+  document.getElementById('acc').textContent='100%';
+  document.getElementById('timer').textContent='30';
+  document.getElementById('prog').style.width='100%';
+  if(timerInterval)clearInterval(timerInterval);
+  renderText();
+}
+
+function renderText(){
+  const display=document.getElementById('display');
+  let html='';
+  for(let i=0;i<Math.min(text.length,80);i++){
+    const offset=Math.max(0,pos-30);
+    const idx=i+offset;
+    if(idx>=text.length)break;
+    let cls='pending';
+    if(idx<pos)cls=text[idx]===text[idx]?'correct':'wrong';
+    if(idx===pos)cls='current';
+    html+=`<span class="char ${cls}">${text[idx]}</span>`;
+  }
+  display.innerHTML=html;
+}
+
+document.getElementById('input').addEventListener('input',e=>{
+  if(!started){
+    started=true;
+    timerInterval=setInterval(()=>{
+      timeLeft--;
+      document.getElementById('timer').textContent=timeLeft;
+      document.getElementById('prog').style.width=(timeLeft/30*100)+'%';
+      if(timeLeft<=0)endTest();
+    },1000);
+  }
+  
+  const val=e.target.value;
+  const lastChar=val[val.length-1];
+  
+  if(pos<text.length){
+    if(lastChar===text[pos]){correct++;keySound();}
+    else{wrong++;wrongKey();}
+    pos++;
+  }
+  
+  e.target.value='';
+  
+  // Update stats
+  const elapsed=30-timeLeft||1;
+  const wpm=Math.round((correct/5)/(elapsed/60));
+  const acc=Math.round((correct/(correct+wrong))*100);
+  document.getElementById('wpm').textContent=wpm;
+  document.getElementById('acc').textContent=acc+'%';
+  
+  renderText();
+  if(pos>=text.length)text+=(' '+generateText());
+});
+
+function endTest(){
+  clearInterval(timerInterval);playing=false;doneSound();
+  const wpm=Math.round((correct/5)/(30/60));
+  const acc=Math.round((correct/(correct+wrong))*100);
+  document.getElementById('input').style.display='none';
+  const r=document.getElementById('results');
+  r.style.display='block';
+  document.getElementById('finalWpm').textContent=wpm;
+  document.getElementById('finalAcc').textContent='Accuracy: '+acc+'%';
+  document.getElementById('finalChars').textContent='Characters: '+correct+' correct, '+wrong+' wrong';
+}
+
+startTest();
+</script>
+</body>
+</html>

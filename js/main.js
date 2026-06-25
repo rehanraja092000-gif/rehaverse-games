@@ -171,6 +171,76 @@ const GAMES = [
     featured: false,
     isOwn: false,
     path: 'games/pong/index.html'
+  },
+  {
+    id: 'cube-runner-3d',
+    title: 'Cube Runner 3D',
+    category: 'action',
+    description: 'Dodge obstacles at increasing speed in this thrilling 3D runner! How far can you go before crashing?',
+    tags: ['3D', 'Action', 'Runner'],
+    rating: 4.7,
+    plays: '34K',
+    color: '#7c3aed',
+    emoji: '🧊',
+    featured: true,
+    isOwn: false,
+    path: 'games/cube-runner-3d/index.html'
+  },
+  {
+    id: 'space-dodge-3d',
+    title: 'Space Dodge 3D',
+    category: 'action',
+    description: 'Pilot your spaceship through a deadly asteroid field in full 3D! Steer with your mouse or touch to survive.',
+    tags: ['3D', 'Space', 'Dodge'],
+    rating: 4.6,
+    plays: '28K',
+    color: '#06b6d4',
+    emoji: '🚀',
+    featured: false,
+    isOwn: false,
+    path: 'games/space-dodge-3d/index.html'
+  },
+  {
+    id: 'typing-speed',
+    title: 'Typing Speed Test',
+    category: 'puzzle',
+    description: 'Test your typing speed and accuracy! Type as many words as you can in 30 seconds. Can you beat 80 WPM?',
+    tags: ['Typing', 'Speed', 'Educational'],
+    rating: 4.5,
+    plays: '52K',
+    color: '#10b981',
+    emoji: '⌨️',
+    featured: false,
+    isOwn: false,
+    path: 'games/typing-speed/index.html'
+  },
+  {
+    id: 'minesweeper',
+    title: 'Minesweeper',
+    category: 'strategy',
+    description: 'The legendary puzzle game. Uncover tiles without hitting a mine. Use logic and deduction to clear the board!',
+    tags: ['Strategy', 'Puzzle', 'Classic'],
+    rating: 4.6,
+    plays: '63K',
+    color: '#f59e0b',
+    emoji: '💣',
+    featured: false,
+    isOwn: false,
+    path: 'games/minesweeper/index.html'
+  },
+  {
+    id: 'sky-jump',
+    title: 'Sky Jump',
+    category: 'arcade',
+    description: 'Jump from platform to platform as high as you can! Collect coins, dodge moving platforms, and reach for the sky.',
+    tags: ['Arcade', 'Platformer', 'Endless'],
+    rating: 4.4,
+    plays: '41K',
+    color: '#a855f7',
+    emoji: '🦘',
+    featured: false,
+    isOwn: false,
+    path: 'games/sky-jump/index.html'
   }
 ];
 

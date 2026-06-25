@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Sky Jump - RehaVerse Games</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#0a0a1a;display:flex;align-items:center;justify-content:center;height:100vh;overflow:hidden;touch-action:none;font-family:'Segoe UI',sans-serif}
+  canvas{border-radius:12px;max-width:100vw;max-height:100vh}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const actx=new(window.AudioContext||window.webkitAudioContext)();
+function tone(f,t,d){const o=actx.createOscillator(),g=actx.createGain();o.connect(g);g.connect(actx.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(0.08,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.start();o.stop(actx.currentTime+d);}
+function jumpSound(){tone(400,'sine',0.06);setTimeout(()=>tone(550,'sine',0.06),40);}
+function landSound(){tone(250,'triangle',0.05);}
+function coinSound(){tone(800,'square',0.06);setTimeout(()=>tone(1000,'square',0.08),50);}
+function dieSound(){tone(200,'sawtooth',0.3);setTimeout(()=>tone(100,'sawtooth',0.4),150);}
+
+const c=document.getElementById('c'),ctx=c.getContext('2d');
+let W,H;
+function resize(){W=Math.min(window.innerWidth,480);H=Math.min(window.innerHeight,720);c.width=W;c.height=H;}
+window.addEventListener('resize',resize);resize();
+
+let player,platforms,coins,score,best=0,scrollY,playing,started;
+const GRAV=0.4,JUMP=-10,PW=70;
+
+function init(){
+  player={x:W/2,y:H-100,vx:0,vy:0,w:24,h:24,onGround:false,dir:1};
+  platforms=[];coins=[];score=0;scrollY=0;playing=false;started=false;
+  // Generate initial platforms
+  for(let i=0;i<12;i++){
+    platforms.push({x:Math.random()*(W-PW),y:H-60-i*55,w:PW+Math.random()*30,type:i%5===0&&i>0?'moving':'normal',mx:1});
+    if(Math.random()>0.5&&i>1)coins.push({x:Math.random()*(W-20),y:H-80-i*55,collected:false});
+  }
+}
+
+function update(){
+  if(!playing)return;
+  // Horizontal movement
+  player.x+=player.vx;
+  player.vx*=0.9;
+  // Wrap around
+  if(player.x>W)player.x=0;
+  if(player.x<0)player.x=W;
+  
+  // Gravity
+  player.vy+=GRAV;
+  player.y+=player.vy;
+  player.onGround=false;
+  
+  // Platform collision (only when falling)
+  if(player.vy>=0){
+    platforms.forEach(p=>{
+      if(player.x+player.w>p.x&&player.x<p.x+p.w&&
+         player.y+player.h>=p.y&&player.y+player.h<=p.y+8){
+        player.y=p.y-player.h;player.vy=JUMP;player.onGround=true;
+        landSound();
+      }
+    });
+  }
+  
+  // Moving platforms
+  platforms.forEach(p=>{
+    if(p.type==='moving'){p.x+=p.mx*1.5;if(p.x<=0||p.x+p.w>=W)p.mx*=-1;}
+  });
+  
+  // Coins
+  coins.forEach(cn=>{
+    if(!cn.collected&&Math.abs(player.x+player.w/2-cn.x-10)<20&&Math.abs(player.y+player.h/2-cn.y-10)<20){
+      cn.collected=true;score+=5;coinSound();
+    }
+  });
+  
+  // Scroll up
+  if(player.y<H*0.35){
+    const scrollAmt=H*0.35-player.y;
+    player.y=H*0.35;scrollY+=scrollAmt;score+=Math.floor(scrollAmt/10);
+    platforms.forEach(p=>p.y+=scrollAmt);
+    coins.forEach(cn=>cn.y+=scrollAmt);
+    // Remove off-screen, add new
+    platforms=platforms.filter(p=>p.y<H+20);
+    coins=coins.filter(cn=>cn.y<H+20);
+    while(platforms.length<12){
+      const topY=Math.min(...platforms.map(p=>p.y));
+      const ny=topY-50-Math.random()*20;
+      platforms.push({x:Math.random()*(W-PW),y:ny,w:PW+Math.random()*30,type:Math.random()>0.7?'moving':'normal',mx:1});
+      if(Math.random()>0.4)coins.push({x:Math.random()*(W-20),y:ny-25,collected:false});
+    }
+  }
+  
+  // Fall death
+  if(player.y>H+50){playing=false;dieSound();if(score>best)best=score;}
+}
+
+function draw(){
+  // Sky gradient
+  const bg=ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#1e1b4b');bg.addColorStop(0.5,'#1a1a3e');bg.addColorStop(1,'#0a0a1a');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  
+  // Stars
+  ctx.fillStyle='rgba(255,255,255,0.2)';
+  for(let i=0;i<15;i++)ctx.fillRect((i*67+20)%W,(i*43+scrollY*0.1)%H,2,2);
+  
+  // Platforms
+  platforms.forEach(p=>{
+    const g=ctx.createLinearGradient(p.x,p.y,p.x,p.y+10);
+    if(p.type==='moving'){g.addColorStop(0,'#f59e0b');g.addColorStop(1,'#d97706');}
+    else{g.addColorStop(0,'#10b981');g.addColorStop(1,'#059669');}
+    ctx.fillStyle=g;ctx.beginPath();ctx.roundRect(p.x,p.y,p.w,10,5);ctx.fill();
+    // Glow
+    ctx.shadowColor=p.type==='moving'?'#f59e0b':'#10b981';ctx.shadowBlur=8;
+    ctx.fillRect(p.x+2,p.y,p.w-4,2);ctx.shadowBlur=0;
+  });
+  
+  // Coins
+  coins.forEach(cn=>{
+    if(cn.collected)return;
+    ctx.fillStyle='#f59e0b';ctx.shadowColor='#f59e0b';ctx.shadowBlur=10;
+    ctx.beginPath();ctx.arc(cn.x+10,cn.y+10,8,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fbbf24';ctx.beginPath();ctx.arc(cn.x+8,cn.y+8,4,0,Math.PI*2);ctx.fill();
+    ctx.shadowBlur=0;
+  });
+  
+  // Player
+  ctx.fillStyle=player.dir>0?'#7c3aed':'#a855f7';
+  ctx.shadowColor='#7c3aed';ctx.shadowBlur=12;
+  ctx.beginPath();ctx.roundRect(player.x,player.y,player.w,player.h,6);ctx.fill();
+  ctx.shadowBlur=0;
+  // Eyes
+  ctx.fillStyle='#fff';
+  ctx.fillRect(player.x+6,player.y+6,5,5);ctx.fillRect(player.x+14,player.y+6,5,5);
+  ctx.fillStyle='#000';
+  ctx.fillRect(player.x+(player.dir>0?9:6),player.y+8,3,3);
+  ctx.fillRect(player.x+(player.dir>0?17:14),player.y+8,3,3);
+  
+  // HUD
+  ctx.fillStyle='#fff';ctx.font='bold 18px Segoe UI';ctx.textAlign='left';
+  ctx.fillText('Score: '+score,12,30);
+  ctx.textAlign='right';ctx.fillText('Best: '+best,W-12,30);
+  
+  if(!started){
+    ctx.fillStyle='rgba(10,10,26,0.7)';ctx.fillRect(0,0,W,H);
+    ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='bold 28px Segoe UI';
+    ctx.fillText('Sky Jump',W/2,H/2-40);
+    ctx.font='15px Segoe UI';ctx.fillStyle='#a855f7';
+    ctx.fillText('← → keys or tilt to move',W/2,H/2);
+    ctx.fillText('Tap or Space to start',W/2,H/2+30);
+  }else if(!playing){
+    ctx.fillStyle='rgba(10,10,26,0.8)';ctx.fillRect(0,0,W,H);
+    ctx.textAlign='center';ctx.fillStyle='#ef4444';ctx.font='bold 30px Segoe UI';
+    ctx.fillText('Game Over',W/2,H/2-30);
+    ctx.fillStyle='#fff';ctx.font='20px Segoe UI';
+    ctx.fillText('Score: '+score,W/2,H/2+10);
+    ctx.fillStyle='#a855f7';ctx.font='14px Segoe UI';
+    ctx.fillText('Tap to retry',W/2,H/2+45);
+  }
+}
+
+function start(){
+  actx.resume();
+  if(!started){started=true;playing=true;player.vy=JUMP;return;}
+  if(!playing){init();started=true;playing=true;player.vy=JUMP;}
+}
+
+function loop(){update();draw();requestAnimationFrame(loop);}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft'){player.vx=-4;player.dir=-1;}
+  if(e.key==='ArrowRight'){player.vx=4;player.dir=1;}
+  if(e.code==='Space'){e.preventDefault();start();}
+});
+c.addEventListener('click',start);
+c.addEventListener('touchstart',e=>{e.preventDefault();start();});
+c.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const r=c.getBoundingClientRect();
+  const tx=(e.touches[0].clientX-r.left)/r.width;
+  if(tx<0.4){player.vx=-4;player.dir=-1;}
+  else if(tx>0.6){player.vx=4;player.dir=1;}
+},{passive:false});
+
+init();loop();
+</script>
+</body>
+</html>

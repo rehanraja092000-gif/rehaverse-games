@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Cube Runner 3D - RehaVerse Games</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#000;overflow:hidden;touch-action:none;font-family:'Segoe UI',sans-serif}
+  canvas{display:block}
+  #hud{position:fixed;top:16px;left:0;right:0;display:flex;justify-content:center;gap:30px;z-index:10;pointer-events:none}
+  .hud-item{background:rgba(10,10,26,0.7);padding:8px 18px;border-radius:10px;color:#fff;font-weight:700;font-size:1rem;border:1px solid rgba(124,58,237,0.4)}
+  .hud-item span{color:#a855f7}
+  #overlay{position:fixed;inset:0;background:rgba(10,10,26,0.92);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20;color:#fff}
+  #overlay h1{font-size:2.5rem;margin-bottom:6px;background:linear-gradient(135deg,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  #overlay p{color:#94a3b8;margin-bottom:24px;font-size:1.1rem}
+  #overlay button{padding:16px 40px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:12px;font-size:1.15rem;font-weight:700;cursor:pointer}
+  #overlay button:hover{opacity:0.9}
+  #overlay .score-display{color:#f59e0b;font-size:1.4rem;font-weight:700;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div id="hud">
+  <div class="hud-item">Score: <span id="score">0</span></div>
+  <div class="hud-item">Speed: <span id="speed">1</span>x</div>
+</div>
+<div id="overlay">
+  <h1>🎮 Cube Runner 3D</h1>
+  <p>Dodge obstacles by moving left and right</p>
+  <p style="font-size:0.85rem;color:#64748b">Arrow keys / WASD / Touch to move</p>
+  <button onclick="startGame()">Play</button>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const actx=new(window.AudioContext||window.webkitAudioContext)();
+function tone(f,t,d){const o=actx.createOscillator(),g=actx.createGain();o.connect(g);g.connect(actx.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(0.08,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.start();o.stop(actx.currentTime+d);}
+function dodgeSound(){tone(500,'sine',0.05);}
+function hitSound(){tone(150,'sawtooth',0.3);setTimeout(()=>tone(80,'sawtooth',0.4),150);}
+function scoreSound(){tone(700,'square',0.06);}
+
+let scene,camera,renderer,player,obstacles=[],particles=[];
+let score=0,bestScore=0,speed=0.3,playing=false,moveX=0;
+const LANE_W=12,keys={};
+
+// Setup
+scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x0a0a1a,0.025);
+
+camera=new THREE.PerspectiveCamera(70,window.innerWidth/window.innerHeight,0.1,200);
+camera.position.set(0,4,8);
+camera.lookAt(0,1,-10);
+
+renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setClearColor(0x0a0a1a);
+document.body.appendChild(renderer.domElement);
+
+// Lighting
+const ambLight=new THREE.AmbientLight(0x404060,0.6);
+scene.add(ambLight);
+const dirLight=new THREE.DirectionalLight(0xa855f7,0.8);
+dirLight.position.set(5,10,5);
+scene.add(dirLight);
+const pointLight=new THREE.PointLight(0xec4899,0.5,30);
+pointLight.position.set(0,5,0);
+scene.add(pointLight);
+
+// Ground
+const groundGeo=new THREE.PlaneGeometry(LANE_W,500);
+const groundMat=new THREE.MeshPhongMaterial({color:0x12122a,shininess:60});
+const ground=new THREE.Mesh(groundGeo,groundMat);
+ground.rotation.x=-Math.PI/2;ground.position.z=-200;
+scene.add(ground);
+
+// Lane lines
+for(let i=-1;i<=1;i+=2){
+  const lineGeo=new THREE.PlaneGeometry(0.05,500);
+  const lineMat=new THREE.MeshBasicMaterial({color:0x7c3aed,transparent:true,opacity:0.4});
+  const line=new THREE.Mesh(lineGeo,lineMat);
+  line.rotation.x=-Math.PI/2;line.position.set(i*LANE_W/3,0.01,-200);
+  scene.add(line);
+}
+
+// Player
+const playerGeo=new THREE.BoxGeometry(1,1,1);
+const playerMat=new THREE.MeshPhongMaterial({color:0x7c3aed,emissive:0x3b1f7a,shininess:100});
+player=new THREE.Mesh(playerGeo,playerMat);
+player.position.set(0,0.6,0);
+scene.add(player);
+
+// Player glow
+const glowGeo=new THREE.BoxGeometry(1.2,1.2,1.2);
+const glowMat=new THREE.MeshBasicMaterial({color:0xa855f7,transparent:true,opacity:0.15});
+const glow=new THREE.Mesh(glowGeo,glowMat);
+player.add(glow);
+
+function createObstacle(){
+  const w=1+Math.random()*2.5;
+  const h=0.8+Math.random()*1.5;
+  const geo=new THREE.BoxGeometry(w,h,1);
+  const colors=[0xef4444,0xf59e0b,0x10b981,0xec4899,0x3b82f6];
+  const mat=new THREE.MeshPhongMaterial({color:colors[Math.floor(Math.random()*colors.length)],emissive:0x111111});
+  const mesh=new THREE.Mesh(geo,mat);
+  mesh.position.set((Math.random()-0.5)*LANE_W*0.7,h/2,-80-Math.random()*30);
+  scene.add(mesh);
+  obstacles.push(mesh);
+}
+
+function createParticle(pos,color){
+  const geo=new THREE.BoxGeometry(0.15,0.15,0.15);
+  const mat=new THREE.MeshBasicMaterial({color});
+  const mesh=new THREE.Mesh(geo,mat);
+  mesh.position.copy(pos);
+  mesh.userData={vx:(Math.random()-0.5)*0.3,vy:Math.random()*0.2+0.1,vz:Math.random()*0.2,life:1};
+  scene.add(mesh);
+  particles.push(mesh);
+}
+
+function startGame(){
+  actx.resume();
+  document.getElementById('overlay').style.display='none';
+  obstacles.forEach(o=>scene.remove(o));obstacles=[];
+  particles.forEach(p=>scene.remove(p));particles=[];
+  player.position.x=0;score=0;speed=0.3;playing=true;moveX=0;
+  document.getElementById('score').textContent=0;
+  for(let i=0;i<8;i++)createObstacle();
+}
+
+function gameOver(){
+  playing=false;hitSound();
+  if(score>bestScore)bestScore=score;
+  // Explosion particles
+  for(let i=0;i<20;i++)createParticle(player.position.clone(),0xa855f7);
+  const ov=document.getElementById('overlay');
+  ov.querySelector('h1').textContent='Game Over!';
+  ov.querySelector('.score-display')?.remove();
+  const sd=document.createElement('div');sd.className='score-display';sd.textContent='Score: '+score+'  |  Best: '+bestScore;
+  ov.querySelector('p').before(sd);
+  ov.querySelector('p').textContent='You crashed into an obstacle';
+  ov.querySelector('button').textContent='Play Again';
+  ov.style.display='flex';
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  
+  if(playing){
+    // Movement
+    const targetX=moveX;
+    if(keys.ArrowLeft||keys.KeyA)moveX=Math.max(-LANE_W/2+1,moveX-0.15);
+    if(keys.ArrowRight||keys.KeyD)moveX=Math.min(LANE_W/2-1,moveX+0.15);
+    player.position.x+=(moveX-player.position.x)*0.12;
+    player.rotation.z=-moveX*0.03;
+    player.rotation.x+=0.02;
+
+    // Obstacles
+    speed=0.3+score*0.003;
+    document.getElementById('speed').textContent=(speed/0.3).toFixed(1);
+    
+    for(let i=obstacles.length-1;i>=0;i--){
+      obstacles[i].position.z+=speed;
+      obstacles[i].rotation.y+=0.01;
+      if(obstacles[i].position.z>10){
+        scene.remove(obstacles[i]);obstacles.splice(i,1);
+        score++;scoreSound();
+        document.getElementById('score').textContent=score;
+        createObstacle();
+      }
+      // Collision
+      if(obstacles[i]&&Math.abs(obstacles[i].position.z-player.position.z)<1){
+        const dx=Math.abs(obstacles[i].position.x-player.position.x);
+        const ow=obstacles[i].geometry.parameters.width/2+0.5;
+        if(dx<ow)gameOver();
+      }
+    }
+
+    // Camera follow
+    pointLight.position.x=player.position.x;
+  }
+
+  // Particles
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.position.x+=p.userData.vx;p.position.y+=p.userData.vy;p.position.z+=p.userData.vz;
+    p.userData.vy-=0.008;p.userData.life-=0.02;
+    p.material.opacity=p.userData.life;p.material.transparent=true;
+    if(p.userData.life<=0){scene.remove(p);particles.splice(i,1);}
+  }
+
+  renderer.render(scene,camera);
+}
+
+// Input
+document.addEventListener('keydown',e=>{keys[e.code]=true;});
+document.addEventListener('keyup',e=>{keys[e.code]=false;});
+
+let touchStartX=0;
+document.addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX;});
+document.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const dx=(e.touches[0].clientX-touchStartX)*0.03;
+  moveX=Math.max(-LANE_W/2+1,Math.min(LANE_W/2-1,moveX+dx));
+  touchStartX=e.touches[0].clientX;
+},{passive:false});
+
+window.addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+animate();
+</script>
+</body>
+</html>
