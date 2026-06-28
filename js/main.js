@@ -241,6 +241,48 @@ const GAMES = [
     featured: false,
     isOwn: false,
     path: 'games/sky-jump/index.html'
+  },
+  {
+    id: 'car-racing-3d',
+    title: 'Car Racing 3D',
+    category: 'racing',
+    description: 'Weave through highway traffic in this fast 3D racer! The faster you drive, the higher your score. How long can you survive the rush?',
+    tags: ['3D', 'Racing', 'Cars'],
+    rating: 4.7,
+    plays: '46K',
+    color: '#3b82f6',
+    emoji: '🏎️',
+    featured: true,
+    isOwn: false,
+    path: 'games/car-racing-3d/index.html'
+  },
+  {
+    id: 'hill-climb',
+    title: 'Hill Climb Truck',
+    category: 'racing',
+    description: 'Drive your truck across rugged hills without flipping over! Collect coins and fuel, master the physics, and see how far you can go.',
+    tags: ['Racing', 'Physics', 'Driving'],
+    rating: 4.6,
+    plays: '39K',
+    color: '#10b981',
+    emoji: '🚚',
+    featured: false,
+    isOwn: false,
+    path: 'games/hill-climb/index.html'
+  },
+  {
+    id: 'cricket',
+    title: 'Cricket Star',
+    category: 'sports',
+    description: 'Time your shots to smash sixes and fours! Bat through your innings, build a big score, and protect your wickets in this fun cricket game.',
+    tags: ['Sports', 'Cricket', 'Timing'],
+    rating: 4.7,
+    plays: '58K',
+    color: '#f59e0b',
+    emoji: '🏏',
+    featured: false,
+    isOwn: false,
+    path: 'games/cricket/index.html'
   }
 ];
 
