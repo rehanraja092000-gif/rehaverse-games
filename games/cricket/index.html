@@ -21,7 +21,7 @@
 <div class="screen" id="startScreen">
   <h1>🏏 Cricket Star</h1>
   <p>Time your shot as the ball reaches the bat!</p>
-  <div class="hint">The ball is bowled, pitches <b>once</b>, then comes onto the bat. <b>Tap / click / SPACE</b> as it enters the orange zone — closer to the center line means a bigger shot. Perfect = SIX! Singles and twos, the batsmen run. Miss and you're bowled. 5 wickets.</div>
+  <div class="hint">The ball is bowled and pitches <b>once</b> before reaching you. <b>Tap / click / SPACE</b> when it enters the orange zone — the closer to the center line, the bigger the shot. Perfect = SIX! On 1s and 2s the batsmen run. Miss and you're bowled. 5 wickets.</div>
   <button class="btn" onclick="startGame()">Play</button>
 </div>
 <div class="screen" id="overScreen" style="display:none">
@@ -34,42 +34,15 @@
 (function(){
 "use strict";
 var actx=new (window.AudioContext||window.webkitAudioContext)();
-
-// ---- noise buffer for crowd + bat crack ----
 var noiseBuf=actx.createBuffer(1,actx.sampleRate*2,actx.sampleRate);
 (function(){var d=noiseBuf.getChannelData(0);for(var i=0;i<d.length;i++)d[i]=Math.random()*2-1;})();
-
 var crowdSource=null,crowdGain=null;
-function startCrowd(){
-  if(crowdSource)return;
-  crowdSource=actx.createBufferSource();crowdSource.buffer=noiseBuf;crowdSource.loop=true;
-  var lp=actx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=700;
-  crowdGain=actx.createGain();crowdGain.gain.value=0.018;
-  crowdSource.connect(lp);lp.connect(crowdGain);crowdGain.connect(actx.destination);
-  crowdSource.start();
-}
-function cheer(big){
-  // swell of noise (crowd roar) + a few whistles
-  var ns=actx.createBufferSource();ns.buffer=noiseBuf;
-  var bp=actx.createBiquadFilter();bp.type='bandpass';bp.frequency.setValueAtTime(500,actx.currentTime);bp.frequency.exponentialRampToValueAtTime(1600,actx.currentTime+0.5);bp.Q.value=0.7;
-  var g=actx.createGain();var peak=big?0.18:0.1;
-  g.gain.setValueAtTime(0.001,actx.currentTime);g.gain.linearRampToValueAtTime(peak,actx.currentTime+0.2);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+(big?1.6:1.0));
-  ns.connect(bp);bp.connect(g);g.connect(actx.destination);ns.start();ns.stop(actx.currentTime+(big?1.7:1.1));
-  if(big){for(var i=0;i<3;i++){(function(k){var o=actx.createOscillator(),og=actx.createGain();o.type='sine';o.frequency.value=1400+Math.random()*800;og.gain.setValueAtTime(0.0001,actx.currentTime+k*0.15);og.gain.linearRampToValueAtTime(0.05,actx.currentTime+k*0.15+0.05);og.gain.exponentialRampToValueAtTime(0.0001,actx.currentTime+k*0.15+0.3);o.connect(og);og.connect(actx.destination);o.start(actx.currentTime+k*0.15);o.stop(actx.currentTime+k*0.15+0.32);})(i);}}
-}
-function batHit(power){
-  // wooden "tock"
-  var o=actx.createOscillator(),g=actx.createGain();o.type='triangle';
-  o.frequency.setValueAtTime(230,actx.currentTime);o.frequency.exponentialRampToValueAtTime(85,actx.currentTime+0.09);
-  g.gain.setValueAtTime(0.28,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.13);
-  o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+0.13);
-  // crack (filtered noise transient)
-  var ns=actx.createBufferSource();ns.buffer=noiseBuf;var hp=actx.createBiquadFilter();hp.type='highpass';hp.frequency.value=1100;
-  var ng=actx.createGain();ng.gain.setValueAtTime(0.18,actx.currentTime);ng.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.05);
-  ns.connect(hp);hp.connect(ng);ng.connect(actx.destination);ns.start();ns.stop(actx.currentTime+0.05);
-}
+function startCrowd(){if(crowdSource)return;crowdSource=actx.createBufferSource();crowdSource.buffer=noiseBuf;crowdSource.loop=true;var lp=actx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=700;crowdGain=actx.createGain();crowdGain.gain.value=0.018;crowdSource.connect(lp);lp.connect(crowdGain);crowdGain.connect(actx.destination);crowdSource.start();}
+function cheer(big){var ns=actx.createBufferSource();ns.buffer=noiseBuf;var bp=actx.createBiquadFilter();bp.type='bandpass';bp.frequency.setValueAtTime(500,actx.currentTime);bp.frequency.exponentialRampToValueAtTime(1600,actx.currentTime+0.5);bp.Q.value=0.7;var g=actx.createGain();var peak=big?0.18:0.1;g.gain.setValueAtTime(0.001,actx.currentTime);g.gain.linearRampToValueAtTime(peak,actx.currentTime+0.2);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+(big?1.6:1.0));ns.connect(bp);bp.connect(g);g.connect(actx.destination);ns.start();ns.stop(actx.currentTime+(big?1.7:1.1));}
+function batHit(){var o=actx.createOscillator(),g=actx.createGain();o.type='triangle';o.frequency.setValueAtTime(230,actx.currentTime);o.frequency.exponentialRampToValueAtTime(85,actx.currentTime+0.09);g.gain.setValueAtTime(0.28,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.13);o.connect(g);g.connect(actx.destination);o.start();o.stop(actx.currentTime+0.13);var ns=actx.createBufferSource();ns.buffer=noiseBuf;var hp=actx.createBiquadFilter();hp.type='highpass';hp.frequency.value=1100;var ng=actx.createGain();ng.gain.setValueAtTime(0.18,actx.currentTime);ng.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+0.05);ns.connect(hp);hp.connect(ng);ng.connect(actx.destination);ns.start();ns.stop(actx.currentTime+0.05);}
 function tone(f,t,d,v){v=v||0.08;var o=actx.createOscillator(),g=actx.createGain();o.connect(g);g.connect(actx.destination);o.type=t;o.frequency.value=f;g.gain.setValueAtTime(v,actx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+d);o.start();o.stop(actx.currentTime+d);}
 function bowlSound(){tone(240,'sine',0.08,0.04);}
+function bounceSound(){tone(320,'sine',0.05,0.06);}
 function outSound(){tone(200,'sawtooth',0.3);setTimeout(function(){tone(110,'sawtooth',0.4);},150);}
 
 var c=document.getElementById('c'),ctx=c.getContext('2d');
@@ -79,127 +52,88 @@ window.addEventListener('resize',resize);resize();
 
 var MAX_WICKETS=5;
 var runs,wickets,balls,playing,particles,ball,batAngle,swinging,resultText,resultColor,resultTimer,state,best=0;
-var runner,runPhase,fielders=[],crowd=[],cheerFlash=0;
+var run=null,fielders=[],crowd=[],cheerFlash=0,bouncedFlag=false;
 
-function geom(){return {pitchY:H*0.62,bowlerX:W*0.13,batsmanX:W*0.80,contactX:W*0.80-26,stumpsX:W*0.80+14,ground:H*0.62+16};}
+function geom(){return {pitchY:H*0.62,bowlerX:W*0.13,batsmanX:W*0.80,contactX:W*0.80-26,stumpsX:W*0.80+14,ground:H*0.62+16,release:H*0.62-36};}
 
 function buildField(){
   var g=geom();
-  // fielders scattered around (far = above pitch, near = below)
-  fielders=[
-    {x:W*0.62,y:g.pitchY-90,t:0},   // mid-off (far)
-    {x:W*0.40,y:g.pitchY-70,t:0},   // mid-on (far)
-    {x:W*0.86,y:g.pitchY-60,t:0},   // cover
-    {x:W*0.30,y:g.pitchY+70,t:0},   // square leg (near)
-    {x:W*0.58,y:g.pitchY+95,t:0},   // mid-wicket (near)
-    {x:W*0.90,y:g.pitchY+55,t:0},   // point
-    {x:W*0.16,y:g.pitchY+60,t:0},   // fine leg
-    {x:W*0.70,y:g.pitchY-110,t:0}   // long-off deep
-  ];
-  // crowd dots along top
-  crowd=[];
-  for(var i=0;i<W;i+=10){crowd.push({x:i+Math.random()*4,y:6+Math.random()*22,c:'hsl('+Math.floor(Math.random()*360)+',60%,60%)',b:Math.random()*6.28});}
+  fielders=[{x:W*0.62,y:g.pitchY-92},{x:W*0.40,y:g.pitchY-72},{x:W*0.87,y:g.pitchY-58},{x:W*0.30,y:g.pitchY+72},{x:W*0.58,y:g.pitchY+98},{x:W*0.90,y:g.pitchY+54},{x:W*0.17,y:g.pitchY+60},{x:W*0.70,y:g.pitchY-112}];
+  for(var i=0;i<fielders.length;i++)fielders[i].t=Math.random()*6;
+  crowd=[];for(var x=0;x<W;x+=10)crowd.push({x:x+Math.random()*4,y:6+Math.random()*22,c:'hsl('+Math.floor(Math.random()*360)+',60%,60%)',b:Math.random()*6.28});
 }
 
-window.startGame=function(){
-  actx.resume();startCrowd();
-  runs=0;wickets=0;balls=0;playing=true;particles=[];runner=null;cheerFlash=0;
-  buildField();
-  document.getElementById('startScreen').style.display='none';
-  document.getElementById('overScreen').style.display='none';
-  nextBall();
-};
+window.startGame=function(){actx.resume();startCrowd();runs=0;wickets=0;balls=0;playing=true;particles=[];run=null;cheerFlash=0;buildField();document.getElementById('startScreen').style.display='none';document.getElementById('overScreen').style.display='none';nextBall();};
 
 function nextBall(){
   if(wickets>=MAX_WICKETS){endGame();return;}
   var g=geom();
-  state='bowling';swinging=false;batAngle=0;resultText='';runner=null;
-  var speed=4.6+Math.random()*1.3+balls*0.025;
-  // released from bowler hand height, will pitch (bounce) once then rise to bat
-  ball={x:g.bowlerX,y:g.pitchY-38,vx:speed,vy:1.2,bounced:false,hit:false,done:false,fvx:0,fvy:0};
+  state='bowling';swinging=false;batAngle=0;resultText='';run=null;bouncedFlag=false;
+  var speed=4.4+Math.random()*1.2+balls*0.02; // horizontal px/frame
+  ball={x:g.bowlerX,y:g.release,vx:speed,hit:false,done:false,fvx:0,fvy:0};
   bowlSound();
+}
+
+// deterministic trajectory: y as a function of horizontal progress t (one bounce, ends at bat height)
+function trajY(t){
+  var g=geom();var bounceT=0.5,hop=40;
+  if(t<bounceT){var p=t/bounceT;return g.release+(g.ground-g.release)*(p*p);}
+  var u=(t-bounceT)/(1-bounceT);
+  return g.ground+(g.pitchY-g.ground)*u - hop*Math.sin(u*Math.PI);
 }
 
 function swing(){
   if(!playing){startGame();return;}
-  if(state!=='bowling'||swinging||!ball||ball.hit||ball.done)return;
-  swinging=true;batAngle=0;
+  if(state!=='bowling'||!ball||ball.hit||ball.done)return;
+  swinging=true;batAngle=0; // bat animation every tap
   var g=geom();
-  var dist=Math.abs(ball.x-g.contactX);
   if(ball.x>g.contactX-60&&ball.x<g.contactX+28){
+    var dist=Math.abs(ball.x-g.contactX);
     ball.hit=true;
     var power,label,col,big=false;
-    if(dist<14){power=6;label='SIX! 🎉';col='#f59e0b';big=true;}
-    else if(dist<28){power=4;label='FOUR! 🔥';col='#10b981';big=true;}
-    else if(dist<42){power=2;label='Two runs';col='#fff';}
+    if(dist<15){power=6;label='SIX! 🎉';col='#f59e0b';big=true;}
+    else if(dist<30){power=4;label='FOUR! 🔥';col='#10b981';big=true;}
+    else if(dist<45){power=2;label='Two runs';col='#fff';}
     else{power=1;label='Single';col='#fff';}
-    batHit(power);
-    if(big)cheer(power===6);
-    cheerFlash=big?30:0;
+    batHit();if(big)cheer(power===6);cheerFlash=big?30:0;
     resultText=label;resultColor=col;resultTimer=80;
-    var ang=(-58-Math.random()*34)*Math.PI/180;
-    var sp=7+power*1.7;
-    ball.fvx=Math.cos(ang)*sp*(Math.random()>0.25?1:-0.7);
-    ball.fvy=Math.sin(ang)*sp;
+    var ang=(-58-Math.random()*32)*Math.PI/180;var sp=7+power*1.7;
+    ball.fvx=Math.cos(ang)*sp*(Math.random()>0.25?1:-0.7);ball.fvy=Math.sin(ang)*sp;
     for(var i=0;i<16;i++)particles.push({x:ball.x,y:ball.y,vx:(Math.random()-0.5)*7,vy:(Math.random()-0.5)*7,life:1,color:power>=4?'#f59e0b':'#fff'});
     balls++;
-    // For 1 or 2 runs, batsmen run between wickets
-    if(power===1||power===2){startRun(power);}
-    else{setTimeout(function(){if(playing)nextBall();},1200);}
+    if(power===1||power===2){startRun(power);}else{setTimeout(function(){if(playing)nextBall();},1150);}
   }
 }
 
 function startRun(n){
-  state='running';
-  var g=geom();
-  runner={x:g.batsmanX,y:g.pitchY,target:g.bowlerX,from:g.batsmanX,to:g.bowlerX,runsLeft:n,phase:0,dir:1};
+  state='running';var g=geom();
+  // two batsmen swap ends; clamped between creases
+  run={a:g.batsmanX,b:g.bowlerX,dir:-1,left:n,phase:0,lo:g.bowlerX,hi:g.batsmanX};
 }
-
 function updateRun(){
-  if(!runner)return;
-  var g=geom();
-  runner.phase+=0.3;
-  var sp=(g.batsmanX-g.bowlerX)/45; // px per frame
-  runner.x+=runner.dir*sp;
-  if(runner.dir>0&&runner.x<=g.bowlerX+4){ // reached far end
-    runner.runsLeft--;
-    if(runner.runsLeft<=0){finishRun();return;}
-    runner.dir=-1;
-  }else if(runner.dir<0&&runner.x>=g.batsmanX-4){
-    runner.runsLeft--;
-    if(runner.runsLeft<=0){finishRun();return;}
-    runner.dir=1;
-  }
+  if(!run)return;var g=geom();run.phase+=0.32;
+  var sp=(run.hi-run.lo)/42;
+  run.a+=run.dir*sp;run.b-=run.dir*sp;
+  if(run.dir<0&&run.a<=run.lo){run.a=run.lo;run.b=run.hi;run.left--;if(run.left<=0){finishRun();return;}run.dir=1;}
+  else if(run.dir>0&&run.a>=run.hi){run.a=run.hi;run.b=run.lo;run.left--;if(run.left<=0){finishRun();return;}run.dir=-1;}
 }
-function finishRun(){runner=null;setTimeout(function(){if(playing)nextBall();},400);}
+function finishRun(){run=null;setTimeout(function(){if(playing)nextBall();},350);}
 
-function endGame(){
-  playing=false;
-  if(runs>best)best=runs;
-  document.getElementById('ovRes').textContent='You scored '+runs+' runs off '+balls+' balls   •   Best: '+best;
-  document.getElementById('overScreen').style.display='flex';
-}
+function endGame(){playing=false;if(runs>best)best=runs;document.getElementById('ovRes').textContent='You scored '+runs+' runs off '+balls+' balls   •   Best: '+best;document.getElementById('overScreen').style.display='flex';}
 
 function update(){
   if(!playing)return;
   if(cheerFlash>0)cheerFlash--;
-  if(state==='running'){updateRun();}
+  if(state==='running')updateRun();
   if(ball&&!ball.done){
     var g=geom();
     if(!ball.hit){
       ball.x+=ball.vx;
-      ball.y+=ball.vy;ball.vy+=0.22; // gravity
-      if(!ball.bounced&&ball.y>=g.ground){ball.y=g.ground;ball.vy=-Math.abs(ball.vy)*0.62;ball.bounced=true;tone(300,'sine',0.04,0.05);}
-      if(ball.x>g.stumpsX){
-        ball.done=true;state='result';
-        wickets++;balls++;outSound();
-        resultText='BOWLED! 🎯';resultColor='#ef4444';resultTimer=80;
-        setTimeout(function(){if(playing)nextBall();},1300);
-      }
-    }else{
-      ball.x+=ball.fvx;ball.y+=ball.fvy;ball.fvy+=0.2;
-      if(ball.y>H+30||ball.x<-30||ball.x>W+30)ball.done=true;
-    }
+      var t=(ball.x-g.bowlerX)/(g.stumpsX-g.bowlerX);if(t<0)t=0;if(t>1)t=1;
+      ball.y=trajY(t);
+      if(!bouncedFlag&&t>=0.5){bouncedFlag=true;bounceSound();}
+      if(ball.x>g.stumpsX){ball.done=true;state='result';wickets++;balls++;outSound();resultText='BOWLED! 🎯';resultColor='#ef4444';resultTimer=80;setTimeout(function(){if(playing)nextBall();},1250);}
+    }else{ball.x+=ball.fvx;ball.y+=ball.fvy;ball.fvy+=0.2;if(ball.y>H+30||ball.x<-30||ball.x>W+30)ball.done=true;}
   }
   if(swinging){batAngle+=0.32;if(batAngle>2.0)swinging=false;}
   if(resultTimer>0)resultTimer--;
@@ -219,91 +153,40 @@ function stick(x,y,color,phase){
 
 function draw(){
   var g=geom();
-  // Sky
   var sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#2c6cb0');sky.addColorStop(1,'#62a3d6');
   ctx.fillStyle=sky;ctx.fillRect(0,0,W,H*0.46);
-  // Crowd stand
   ctx.fillStyle='#1e293b';ctx.fillRect(0,0,W,36);
   for(var i=0;i<crowd.length;i++){var cd=crowd[i];var jig=cheerFlash>0?Math.sin(cd.b+performance.now()*0.02)*2:0;ctx.fillStyle=cd.c;ctx.fillRect(cd.x,cd.y+jig,5,5);}
-  // Field
   var fld=ctx.createLinearGradient(0,H*0.34,0,H);fld.addColorStop(0,'#2f8f3f');fld.addColorStop(1,'#1f6e2c');
   ctx.fillStyle=fld;ctx.fillRect(0,H*0.34,W,H*0.66);
-  // boundary rope (ellipse)
-  ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=3;
-  ctx.beginPath();ctx.ellipse(W/2,g.pitchY,W*0.46,H*0.30,0,0,Math.PI*2);ctx.stroke();
-  // mowing stripes
-  ctx.fillStyle='rgba(255,255,255,0.04)';
-  for(var s=0;s<10;s++)if(s%2)ctx.fillRect(0,H*0.34+s*((H*0.66)/10),W,(H*0.66)/10);
-
-  // Fielders
-  for(var f=0;f<fielders.length;f++){var fl=fielders[f];var bob=Math.sin(fl.t)*1.5;stick(fl.x,fl.y+bob,'#dbeafe');
-    // small shadow
-    ctx.fillStyle='rgba(0,0,0,0.15)';ctx.beginPath();ctx.ellipse(fl.x,fl.y+5,8,3,0,0,Math.PI*2);ctx.fill();}
-
-  // Pitch
+  ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(W/2,g.pitchY,W*0.46,H*0.30,0,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,0.04)';for(var s=0;s<10;s++)if(s%2)ctx.fillRect(0,H*0.34+s*((H*0.66)/10),W,(H*0.66)/10);
+  for(var f=0;f<fielders.length;f++){var fl=fielders[f];var bob=Math.sin(fl.t)*1.5;ctx.fillStyle='rgba(0,0,0,0.15)';ctx.beginPath();ctx.ellipse(fl.x,fl.y+5,8,3,0,0,Math.PI*2);ctx.fill();stick(fl.x,fl.y+bob,'#dbeafe');}
   var py=g.pitchY;
   ctx.fillStyle='#cbb083';ctx.fillRect(g.bowlerX-20,py-24,(g.batsmanX-g.bowlerX)+60,48);
   ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=2;
   ctx.beginPath();ctx.moveTo(g.bowlerX,py-24);ctx.lineTo(g.bowlerX,py+24);ctx.stroke();
   ctx.beginPath();ctx.moveTo(g.batsmanX,py-24);ctx.lineTo(g.batsmanX,py+24);ctx.stroke();
-
-  // Hitting zone
-  if(state==='bowling'&&ball&&!ball.hit){
-    var zx=g.contactX-60,zw=88;
-    var grad=ctx.createLinearGradient(zx,0,zx+zw,0);
-    grad.addColorStop(0,'rgba(245,158,11,0)');grad.addColorStop(0.6,'rgba(245,158,11,0.25)');grad.addColorStop(1,'rgba(245,158,11,0.05)');
-    ctx.fillStyle=grad;ctx.fillRect(zx,py-30,zw,60);
-    ctx.strokeStyle='rgba(245,158,11,0.7)';ctx.lineWidth=2;ctx.setLineDash([4,4]);
-    ctx.beginPath();ctx.moveTo(g.contactX,py-30);ctx.lineTo(g.contactX,py+30);ctx.stroke();ctx.setLineDash([]);
-  }
-
-  // Stumps
+  if(state==='bowling'&&ball&&!ball.hit){var zx=g.contactX-60,zw=88;var grad=ctx.createLinearGradient(zx,0,zx+zw,0);grad.addColorStop(0,'rgba(245,158,11,0)');grad.addColorStop(0.6,'rgba(245,158,11,0.25)');grad.addColorStop(1,'rgba(245,158,11,0.05)');ctx.fillStyle=grad;ctx.fillRect(zx,py-30,zw,60);ctx.strokeStyle='rgba(245,158,11,0.7)';ctx.lineWidth=2;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(g.contactX,py-30);ctx.lineTo(g.contactX,py+30);ctx.stroke();ctx.setLineDash([]);}
   ctx.strokeStyle='#f5e0a0';ctx.lineWidth=3;
   for(var k=-1;k<=1;k++){ctx.beginPath();ctx.moveTo(g.bowlerX-6+k*5,py-24);ctx.lineTo(g.bowlerX-6+k*5,py-46);ctx.stroke();ctx.beginPath();ctx.moveTo(g.stumpsX+k*5,py-6);ctx.lineTo(g.stumpsX+k*5,py-28);ctx.stroke();}
-
-  // Bowler
   stick(g.bowlerX,py,'#1e293b');
-  // Batsman (hidden while running, runner shown instead)
   if(state!=='running'){
     stick(g.batsmanX,py,'#0f172a');
-    ctx.save();ctx.translate(g.batsmanX-6,py-26);ctx.rotate(0.5-batAngle);
-    ctx.strokeStyle='#1e293b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,12);ctx.stroke();
-    ctx.fillStyle='#d97706';ctx.fillRect(-4,12,8,28);ctx.restore();
+    ctx.save();ctx.translate(g.batsmanX-6,py-26);ctx.rotate(0.5-batAngle);ctx.strokeStyle='#1e293b';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,12);ctx.stroke();ctx.fillStyle='#d97706';ctx.fillRect(-4,12,8,28);ctx.restore();
   }
-
-  // Runner between wickets
-  if(runner){
-    stick(runner.x,runner.y,'#0f172a',runner.phase);
-    // a bat carried
-    ctx.strokeStyle='#d97706';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(runner.x+ (runner.dir>0?8:-8),runner.y-20);ctx.lineTo(runner.x+(runner.dir>0?14:-14),runner.y-2);ctx.stroke();
-  }
-
-  // Ball
-  if(ball&&!ball.done){
-    ctx.fillStyle='#dc2626';ctx.shadowColor='#dc2626';ctx.shadowBlur=10;
-    ctx.beginPath();ctx.arc(ball.x,ball.y,7,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
-    ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.beginPath();ctx.arc(ball.x,ball.y,7,0.3,2.8);ctx.stroke();
-  }
-
-  // Particles
+  if(run){stick(run.a,py,'#0f172a',run.phase);stick(run.b,py,'#1e3a8a',run.phase+3);}
+  if(ball&&!ball.done){ctx.fillStyle='#dc2626';ctx.shadowColor='#dc2626';ctx.shadowBlur=10;ctx.beginPath();ctx.arc(ball.x,ball.y,7,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.beginPath();ctx.arc(ball.x,ball.y,7,0.3,2.8);ctx.stroke();}
   for(var j=0;j<particles.length;j++){var p=particles[j];ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.color;ctx.fillRect(p.x-2,p.y-2,4,4);ctx.globalAlpha=1;}
-
-  // Result text
   if(resultText&&resultTimer>0){ctx.fillStyle=resultColor;ctx.font='bold 36px Segoe UI';ctx.textAlign='center';ctx.shadowColor='rgba(0,0,0,0.4)';ctx.shadowBlur=8;ctx.fillText(resultText,W/2,H*0.22);ctx.shadowBlur=0;}
-
-  // Scoreboard
-  ctx.fillStyle='rgba(10,10,26,0.65)';ctx.fillRect(W/2-115,12,230,38);
-  ctx.fillStyle='#fff';ctx.font='bold 20px Segoe UI';ctx.textAlign='center';
-  ctx.fillText(runs+' / '+wickets+'   ('+balls+' balls)',W/2,37);
-  ctx.font='13px Segoe UI';ctx.fillStyle='#cbd5e1';ctx.textAlign='left';
-  ctx.fillText('Wickets left: '+(MAX_WICKETS-wickets),14,26);
+  ctx.fillStyle='rgba(10,10,26,0.65)';ctx.fillRect(W/2-115,12,230,38);ctx.fillStyle='#fff';ctx.font='bold 20px Segoe UI';ctx.textAlign='center';ctx.fillText(runs+' / '+wickets+'   ('+balls+' balls)',W/2,37);
+  ctx.font='13px Segoe UI';ctx.fillStyle='#cbd5e1';ctx.textAlign='left';ctx.fillText('Wickets left: '+(MAX_WICKETS-wickets),14,26);
 }
 
 function loop(){update();draw();requestAnimationFrame(loop);}
 c.addEventListener('click',function(){swing();});
 c.addEventListener('touchstart',function(e){e.preventDefault();swing();});
 document.addEventListener('keydown',function(e){if(e.code==='Space'){e.preventDefault();swing();}});
-
 runs=0;wickets=0;balls=0;playing=false;particles=[];ball=null;resultText='';resultTimer=0;state='ready';buildField();
 loop();
 })();
